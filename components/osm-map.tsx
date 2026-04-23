@@ -58,10 +58,10 @@ export default function OsmMap({ stops, legs, theme }: Props) {
       <MapContainer
         center={[20, 0]}
         zoom={2}
-        scrollWheelZoom={false}
+        scrollWheelZoom
         touchZoom
         className="h-full w-full"
-        zoomControl={false}
+        zoomControl
       >
         <TileLayer
           attribution={

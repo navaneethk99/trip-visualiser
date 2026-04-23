@@ -80,6 +80,7 @@ const INITIAL_STOPS: StopInput[] = [
 ];
 
 const THEME_STORAGE_KEY = "orbit-planner-theme";
+const THEME_CHANGE_EVENT = "orbit-planner-theme-change";
 
 function subscribeToThemePreference(onStoreChange: () => void) {
   if (typeof window === "undefined") {
@@ -92,8 +93,17 @@ function subscribeToThemePreference(onStoreChange: () => void) {
     }
   };
 
+  const handleThemeChange = () => {
+    onStoreChange();
+  };
+
   window.addEventListener("storage", handleStorage);
-  return () => window.removeEventListener("storage", handleStorage);
+  window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange);
+
+  return () => {
+    window.removeEventListener("storage", handleStorage);
+    window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange);
+  };
 }
 
 function getThemePreferenceSnapshot(): Theme {
@@ -106,12 +116,11 @@ function getThemePreferenceSnapshot(): Theme {
 
 export default function Home() {
   const [stops, setStops] = useState<StopInput[]>(INITIAL_STOPS);
-  const storedTheme = useSyncExternalStore(
+  const theme = useSyncExternalStore(
     subscribeToThemePreference,
     getThemePreferenceSnapshot,
     () => "light",
   );
-  const [theme, setTheme] = useState<Theme>("light");
   const [journey, setJourney] = useState<TravelResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -128,13 +137,14 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    setTheme(storedTheme);
-  }, [storedTheme]);
-
-  useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
+
+  function updateTheme(nextTheme: Theme) {
+    document.documentElement.dataset.theme = nextTheme;
+    window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
+  }
 
   async function analyseStops(nextStops: StopInput[]) {
     setLoading(true);
@@ -341,7 +351,7 @@ export default function Home() {
             <form className="flex flex-wrap gap-3" onSubmit={analyseTrip}>
               <button
                 type="button"
-                onClick={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
+                onClick={() => updateTheme(theme === "light" ? "dark" : "light")}
                 className={`rounded-full border px-4 py-2.5 text-sm font-medium transition ${
                   isDark
                     ? "border-slate-600 bg-slate-900 text-slate-100 hover:bg-slate-800"
@@ -456,6 +466,7 @@ export default function Home() {
 
           <JourneyFlow
             key={[
+              theme,
               stops.map((stop) => stop.id).join("|"),
               (journey?.legs ?? []).map((leg) => leg.id).join("|"),
             ].join("::")}

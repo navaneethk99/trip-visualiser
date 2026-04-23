@@ -68,6 +68,10 @@ const nodeTypes = {
   itineraryStop: StopNode,
 };
 
+const defaultViewport = { x: 0, y: 0, zoom: 0.8 };
+const defaultEdgeOptions = { zIndex: 1 };
+const proOptions = { hideAttribution: true };
+
 export default function JourneyFlow({
   stops,
   legs,
@@ -203,7 +207,6 @@ function JourneyFlowCanvas({
       }),
     [isDark, legs, selectedModes],
   );
-
   async function handleNodeDragStop() {
     const orderedIds = [...nodes]
       .sort((left, right) => left.position.x - right.position.x)
@@ -253,22 +256,15 @@ function JourneyFlowCanvas({
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}
-            defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-            fitViewOptions={{ padding: 0.2, maxZoom: 1.05 }}
+            defaultViewport={defaultViewport}
             onNodesChange={onNodesChange}
             onNodeDragStop={() => {
               void handleNodeDragStop();
             }}
-            onInit={(instance) => {
-              window.setTimeout(() => {
-                void instance.fitView({ duration: 350, padding: 0.2, maxZoom: 1.05 });
-              }, 0);
-            }}
-            fitView
             minZoom={0.4}
             maxZoom={1.3}
-            proOptions={{ hideAttribution: true }}
-            defaultEdgeOptions={{ zIndex: 1 }}
+            proOptions={proOptions}
+            defaultEdgeOptions={defaultEdgeOptions}
             nodesDraggable
             nodesConnectable={false}
             elementsSelectable
